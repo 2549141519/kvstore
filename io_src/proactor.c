@@ -133,23 +133,27 @@ int proactor_start(unsigned short port, msg_handler handler)
 				set_event_recv(&ring, connfd, buffer, BUFFER_LENGTH, 0);
 
 				
-			} else if (result.event == EVENT_READ) {  //
+			}
+            else if (result.event == EVENT_READ) 
+            {  //
 
-				int ret = entries->res;
+			    int ret = entries->res;
 
-				if (ret == 0) {
-					close(result.fd);
-				} else if (ret > 0) {
-					
-					//int kvs_protocol(char *msg, int length, char *response);
-					ret = kvs_handler(buffer, ret, response);
-					
-					set_event_send(&ring, result.fd, response, ret, 0);
-				}
-			}  else if (result.event == EVENT_WRITE) {
+			    if (ret == 0) 
+                {
+				    close(result.fd);
+			    } 
+                else if (ret > 0) 
+                {  
+                        //int kvs_protocol(char *msg, int length, char *response);
+                    ret = kvs_handler(buffer, ret, response);  
+                    set_event_send(&ring, result.fd, response, ret, 0);
+                }
+			}  
+            else if (result.event == EVENT_WRITE) 
+            {
 				int ret = entries->res;
 				//printf("set_event_send ret: %d, %s\n", ret, buffer);
-
 				set_event_recv(&ring, result.fd, buffer, BUFFER_LENGTH, 0);
 			}
         }

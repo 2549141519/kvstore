@@ -8,6 +8,40 @@
 #include<stdio.h>
 #include <string.h>
 
+ssize_t recv_line(int fd, char *buffer, size_t max_length,int flag) {
+    size_t total_read = 0;
+    char c;
+    int n;
+
+    while (total_read < max_length - 1) {
+        // Read one character at a time
+        n = recv(fd, &c, 1, flag);
+        if (n > 0) {
+            if (c == '\r') {
+                // Peek at the next character
+                n = recv(fd, &c, 1, MSG_PEEK);
+                if (n > 0 && c == '\n') {
+                    // Consume the '\n'
+                    recv(fd, &c, 1, flag);
+                }
+                break;
+            } else if (c == '\n') {
+                break;
+            } else {
+                buffer[total_read++] = c;
+            }
+        } else if (n == 0) {
+            // Connection closed
+            break;
+        } else {
+            // Error occurred
+            return -1;
+        }
+    }
+
+    buffer[total_read] = '\0';
+    return total_read;
+}
 
 typedef int (*msg_handler)(char *msg, int length, char *response);
 
@@ -114,7 +148,7 @@ int recv_callback(int fd)
 {
 	memset(conn_pool[fd].readbuffer, 0, BUFFER_LENGTH);
 
-	int count = recv(fd, conn_pool[fd].readbuffer, BUFFER_LENGTH, 0);
+	int count = recv_line(fd, conn_pool[fd].readbuffer, BUFFER_LENGTH, 0);
 	if (count == 0) { // disconnect
 		//printf("client disconnect: %d\n", fd);
 		close(fd);
