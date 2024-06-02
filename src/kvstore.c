@@ -4,7 +4,9 @@
 #include<stdlib.h>
 
 
-
+extern const char *command[] = {
+	"SET", "GET", "DEL", "MOD", "EXIST",
+};
 
 void *kvs_malloc(size_t size)
 {
@@ -16,11 +18,6 @@ void kvs_free(void *ptr)
 	return free(ptr);
 }
 
-const char *command[] = {
-	"SET", "GET", "DEL", "MOD", "EXIST",
-	"RSET", "RGET", "RDEL", "RMOD", "REXIST",
-	"HSET", "HGET", "HDEL", "HMOD", "HEXIST"
-};
 
 int kvs_split_token(char *msg,char *tokens[])
 {
@@ -36,8 +33,7 @@ int kvs_split_token(char *msg,char *tokens[])
         tokens[index++] = token;
     }
 
-	printf("tokens[0] %s",tokens[0]);
-	printf("tokens[1] %s",tokens[1]);
+
 	return index;
 
 }
@@ -110,6 +106,58 @@ int kvs_filter_protocol(char **tokens, int count, char *response)
 		break;
 #endif
 
+#if ENABLE_HASH
+	case KVS_CMD_SET:
+		ret = kvs_hash_set(&global_hash ,key, value);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "EXIST\r\n");
+		} 
+		
+		break;
+	case KVS_CMD_GET: {
+		char *result = kvs_hash_get(&global_hash, key);
+		if (result == NULL) {
+			length = sprintf(response, "NO EXIST\r\n");
+		} else {
+			length = sprintf(response, "%s\r\n", result);
+		}
+		break;
+	}
+	case KVS_CMD_DEL:
+		ret = kvs_hash_del(&global_hash ,key);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+ 		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+	case KVS_CMD_MOD:
+		ret = kvs_hash_mod(&global_hash ,key, value);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+ 		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+	case KVS_CMD_EXIST:
+		ret = kvs_hash_exist(&global_hash ,key);
+		if (ret == 0) {
+			length = sprintf(response, "EXIST\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+#endif
+
+
 	}
 	return length;
 }
@@ -138,17 +186,6 @@ int kvs_protocol(char *msg, int length, char *response) {  //
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 int kv_store(char *msg, int length, char *response)
 {
     sprintf(response,msg,length);
@@ -158,11 +195,11 @@ int kv_store(char *msg, int length, char *response)
 void dest_(void) {
 #if ENABLE_ARRAY
 	kvs_array_destory(&global_array);
-#endif
-#if ENABLE_RBTREE
+
+#elif ENABLE_RBTREE
 	kvs_rbtree_destory(&global_rbtree);
-#endif
-#if ENABLE_HASH
+
+#elif ENABLE_HASH
 	kvs_hash_destory(&global_hash);
 #endif
 
@@ -173,23 +210,24 @@ int init_()
 #if ENABLE_ARRAY
 	memset(&global_array, 0, sizeof(kvs_array));
 	kvs_array_create(&global_array);
+#elif ENABLE_HASH	
+	memset(&global_hash, 0, sizeof(kvs_hashtable));
+	kvs_hash_create(&global_hash);
+
+
 #endif
 }
 
 int main()
 {
 	init_();
-    int port = 9999;
-
-    reactor_start(port, kvs_protocol);
-
-	
+    int port = 9998;
 
 #if (NETWORK_SELECT == NETWORK_REACTOR)
 	reactor_start(port, kvs_protocol);  //
-#elif (NETWORK_SELECT == NETWORK_PROACTOR)
-	ntyco_start(port, kvs_protocol);
 #elif (NETWORK_SELECT == NETWORK_NTYCO)
+	coroutine_start(port, kvs_protocol);
+#elif (NETWORK_SELECT == NETWORK_PROACTOR)
 	proactor_start(port, kvs_protocol);
 #endif
 	dest_();

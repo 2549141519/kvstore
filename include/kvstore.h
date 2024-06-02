@@ -7,12 +7,14 @@
 #define NETWORK_PROACTOR	1
 #define NETWORK_NTYCO		2
 #define NETWORK_SELECT		NETWORK_REACTOR
-
 #define KVS_MAX_TOKENS		128
 
-#define ENABLE_ARRAY		1
+#define ENABLE_ARRAY		0
 #define ENABLE_RBTREE		0
-#define ENABLE_HASH			0
+#define ENABLE_HASH			1
+
+
+
 
 enum {
 	KVS_CMD_START = 0,
@@ -22,18 +24,6 @@ enum {
 	KVS_CMD_DEL,
 	KVS_CMD_MOD,
 	KVS_CMD_EXIST,
-	// rbtree
-	KVS_CMD_RSET,
-	KVS_CMD_RGET,
-	KVS_CMD_RDEL,
-	KVS_CMD_RMOD,
-	KVS_CMD_REXIST,
-	// hash
-	KVS_CMD_HSET,
-	KVS_CMD_HGET,
-	KVS_CMD_HDEL,
-	KVS_CMD_HMOD,
-	KVS_CMD_HEXIST,
 	
 	KVS_CMD_COUNT,
 };
@@ -76,6 +66,40 @@ char* kvs_array_get(kvs_array *inst, char *key);
 int kvs_array_del(kvs_array *inst, char *key);
 int kvs_array_mod(kvs_array *inst, char *key, char *value);
 int kvs_array_exist(kvs_array *inst, char *key);
+#endif
+
+#if ENABLE_HASH	
+
+
+#define MAX_TABLE_SIZE	1024
+
+typedef struct kvs_hashnode
+{
+	char *key;
+	char *value;
+
+	struct kvs_hashnode *next;
+}kvs_hashnode;
+
+typedef struct kvs_hashtable
+{
+	kvs_hashnode **nodes;
+	int max_slots;
+	int count;
+
+}kvs_hashtable;
+
+extern kvs_hashtable global_hash;
+
+
+int kvs_hash_create(kvs_hashtable *table);
+void kvs_hash_destory(kvs_hashtable *table);
+int kvs_hash_set(kvs_hashtable *table, char *key, char *value);
+char * kvs_hash_get(kvs_hashtable *table, char *key);
+int kvs_hash_mod(kvs_hashtable *table, char *key, char *value);
+int kvs_hash_del(kvs_hashtable *table, char *key);
+int kvs_hash_exist(kvs_hashtable *table, char *key);
+
 
 
 #endif

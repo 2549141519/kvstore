@@ -1,3 +1,5 @@
+
+#if ENABLE_ARRAY
 #include "../include/kvstore.h"
 
 
@@ -109,8 +111,7 @@ int kvs_array_del(kvs_array *inst, char *key) {
 char* kvs_array_get(kvs_array *inst,char *key)
 {
     if (inst == NULL || key == NULL) return NULL;
-	printf("\n key:%s",key);
-	printf("\n keytable%s",inst->table[0].key);
+	
     for(int i = 0; i < inst->total; i++)
     {
         if (inst->table[i].key == NULL) {
@@ -165,3 +166,5 @@ int kvs_array_exist(kvs_array *inst, char *key) {
 	}
 	return 0;
 }
+
+#endif
