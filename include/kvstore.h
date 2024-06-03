@@ -11,7 +11,8 @@
 
 #define ENABLE_ARRAY		0
 #define ENABLE_RBTREE		0
-#define ENABLE_HASH			1
+#define ENABLE_HASH			0
+#define ENABLE_SKIPTABLE    1
 
 
 
@@ -40,7 +41,7 @@ extern int reactor_start(unsigned short port, msg_handler handler);
 extern int proactor_start(unsigned short port, msg_handler handler);
 extern int coroutine_start(unsigned short port, msg_handler handler);
 
-#define KVS_ARRAY_SIZE 512
+
 
 #if ENABLE_ARRAY
 
@@ -99,8 +100,34 @@ char * kvs_hash_get(kvs_hashtable *table, char *key);
 int kvs_hash_mod(kvs_hashtable *table, char *key, char *value);
 int kvs_hash_del(kvs_hashtable *table, char *key);
 int kvs_hash_exist(kvs_hashtable *table, char *key);
+#endif
 
+#if ENABLE_SKIPTABLE
+typedef struct kvs_skipnode
+{
+	char *key;
+	char *value;
+	struct kvs_skipnode **next;
 
+}kvs_skipnode;
+
+typedef struct kvs_skiptable
+{
+	kvs_skipnode *head;
+	int level;
+}kvs_skiptable;
+
+extern kvs_skiptable global_skiptable;
+
+int kvs_skip_create(kvs_skiptable *table);
+void kvs_skip_destory(kvs_skiptable *table);
+int kvs_skip_set(kvs_skiptable *table, char *key, char *value);
+char * kvs_skip_get(kvs_skiptable *table, char *key);
+int kvs_skip_mod(kvs_skiptable *table, char *key, char *value);
+int kvs_skip_del(kvs_skiptable *table, char *key);
+int kvs_skip_exist(kvs_skiptable *table, char *key);
 
 #endif
+
+
 

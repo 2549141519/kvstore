@@ -157,6 +157,57 @@ int kvs_filter_protocol(char **tokens, int count, char *response)
 		break;
 #endif
 
+#if ENABLE_SKIPTABLE
+	case KVS_CMD_SET:
+		ret = kvs_skip_set(&global_skiptable ,key, value);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "EXIST\r\n");
+		} 
+		
+		break;
+	case KVS_CMD_GET: {
+		char *result = kvs_skip_get(&global_skiptable, key);
+		if (result == NULL) {
+			length = sprintf(response, "NO EXIST\r\n");
+		} else {
+			length = sprintf(response, "%s\r\n", result);
+		}
+		break;
+	}
+	case KVS_CMD_DEL:
+		ret = kvs_skip_del(&global_skiptable ,key);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+ 		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+	case KVS_CMD_MOD:
+		ret = kvs_skip_mod(&global_skiptable ,key, value);
+		if (ret < 0) {
+			length = sprintf(response, "ERROR\r\n");
+ 		} else if (ret == 0) {
+			length = sprintf(response, "OK\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+	case KVS_CMD_EXIST:
+		ret = kvs_skip_exist(&global_skiptable ,key);
+		if (ret == 0) {
+			length = sprintf(response, "EXIST\r\n");
+		} else {
+			length = sprintf(response, "NO EXIST\r\n");
+		}
+		break;
+#endif
+
 
 	}
 	return length;
@@ -195,12 +246,14 @@ int kv_store(char *msg, int length, char *response)
 void dest_(void) {
 #if ENABLE_ARRAY
 	kvs_array_destory(&global_array);
-
+kvs_hash
 #elif ENABLE_RBTREE
 	kvs_rbtree_destory(&global_rbtree);
 
 #elif ENABLE_HASH
 	kvs_hash_destory(&global_hash);
+#elif ENABLE_SKIPTABLE
+	kvs_skip_destory(&global_skiptable);
 #endif
 
 }
@@ -213,8 +266,9 @@ int init_()
 #elif ENABLE_HASH	
 	memset(&global_hash, 0, sizeof(kvs_hashtable));
 	kvs_hash_create(&global_hash);
-
-
+#elif ENABLE_SKIPTABLE
+	memset(&global_skiptable, 0, sizeof(kvs_skiptable));
+	kvs_skip_create(&global_skiptable);
 #endif
 }
 

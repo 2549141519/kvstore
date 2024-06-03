@@ -2,7 +2,7 @@
 #if ENABLE_ARRAY
 #include "../include/kvstore.h"
 
-
+#define KVS_ARRAY_SIZE 512
 //total指的是last元素 可以加快查找效率
 kvs_array global_array = {0};
 

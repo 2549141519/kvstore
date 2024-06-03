@@ -49,6 +49,7 @@ static msg_handler kvs_handler;
 
 int kvs_request(struct conn *c) {
 	
+	memset(c->writebuffer,0,BUFFER_LENGTH);
 	c->writelength = kvs_handler(c->readbuffer, c->readlength, c->writebuffer);
 
 	//sprintf(c->writebuffer,c->readbuffer,c->readlength);
@@ -147,7 +148,6 @@ int accept_callback(int fd)
 int recv_callback(int fd)
 {
 	memset(conn_pool[fd].readbuffer, 0, BUFFER_LENGTH);
-
 	int count = recv_line(fd, conn_pool[fd].readbuffer, BUFFER_LENGTH, 0);
 	if (count == 0) { // disconnect
 		//printf("client disconnect: %d\n", fd);
